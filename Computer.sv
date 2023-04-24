@@ -25,7 +25,8 @@ module Computer#(parameter integer DATA_WIDTH=16)(clk,timing_clr,input_data,pc_c
 	output[DATA_WIDTH-1:0]	d_FLAG;
 	output[3:0]					d_ucode_S;
 	output						d_ucode_M,d_ucode_WE;
-	output[3:0]					d_ucode_A,d_ucode_B,d_ucode_C;
+	output[4:0]					d_ucode_A,d_ucode_B;
+	output[3:0]					d_ucode_C;
 	output[7:0]					d_ucode_UA;
 	output						d_SHEFT_clk;
 	output[DATA_WIDTH-1:0]	d_SHEFT_out,d_SHEFT_flag;
@@ -38,24 +39,19 @@ module Computer#(parameter integer DATA_WIDTH=16)(clk,timing_clr,input_data,pc_c
 	Timing#(2)				Timing_inst(.clk(clk),.clr(timing_clr),.T(clk_cycle));
 	assign					d_timing = clk_cycle;
 	
+	wire[DATA_WIDTH-1:0]	data_bus;
+	wire[27:0]				ucode_bus;
+	
 	//ucode
 	wire[3:0]				ucode_S;
 	wire						ucode_M,ucode_WE;
-	wire[3:0]				ucode_A,ucode_B,ucode_C;
+	wire[4:0]				ucode_A,ucode_B;
+	wire[3:0]				ucode_C;
 	wire[7:0]				ucode_UA;
-	wire[25:0]				ucode_bus;
 	assign					{ucode_S,ucode_M,ucode_WE,ucode_A,ucode_B,ucode_C,ucode_UA}=ucode_bus;
 	
 	//微控制器
-	wire[7:0]				last_code;						//IR寄存器内容
-	uControl					uControl_inst(.clk(ucode_gen_clk),.P(ucode_C),.SWA(SWA),.SWB(SWB),.UA(ucode_UA),.IR(last_code),.ucode(ucode_bus),.addr(d_uaddr));
-	assign					d_ucode_S	= ucode_S,
-								d_ucode_M	= ucode_M,
-								d_ucode_WE	= ucode_WE,
-								d_ucode_A	= ucode_A,
-								d_ucode_B	= ucode_B,
-								d_ucode_C	= ucode_C,
-								d_ucode_UA	= ucode_UA;
+	wire[15:0]				last_code;						//IR寄存器内容
 	
 	//A字段译码器 负责指明调用的器件
 	wire						LDR0,LDR1,LDR2;				//REG:载入寄存器R0,载入寄存器R1,载入寄存器R2
@@ -66,16 +62,9 @@ module Computer#(parameter integer DATA_WIDTH=16)(clk,timing_clr,input_data,pc_c
 	wire						LDPC,INCPC;						//LDPC:写入PC计数器 INCPC:PC计数器自增
 	wire						LDLED;							//LDLED:输出到LED
 	wire						LDIR;								//LDIR:输出到IR寄存器
-	decode4_16				ucode_A_decoder(	.data(ucode_A),
-														.eq1(LDR0),.eq2(LDR1),.eq3(LDR2),
-														.eq4(LDDR1),.eq5(LDDR2),.eq6(LDALUCN),
-														.eq7(LDSHEFT),
-														.eq8(LDFLAG),
-														.eq9(LDRAM),.eq10(LDRAMD),
-														.eq11(LDPC),.eq12(INCPC),
-														.eq13(LDLED),
-														.eq14(LDIR)
-														);
+	wire						LDAD1,LDAD2;					//LDAD:ucontrol内部寻址寄存器
+	wire						LDDAT1,LDDAT2;					//LDDAT:ucontrol内部寻址数据寄存器
+	
 	//总线以及MUX选择器输入
 	wire[DATA_WIDTH-1:0]	EFLAG = {DATA_WIDTH{1'b0}};
 	wire[DATA_WIDTH-1:0]	R0,R1,R2;
@@ -84,8 +73,41 @@ module Computer#(parameter integer DATA_WIDTH=16)(clk,timing_clr,input_data,pc_c
 	wire[DATA_WIDTH-1:0]	flag;
 	wire[DATA_WIDTH-1:0]	RAM_out;
 	wire[DATA_WIDTH-1:0]	PC_out;
-	wire[DATA_WIDTH-1:0]	data_bus;
-	lpm_mux4					data_bus_mux(	.sel(ucode_B),.result(data_bus),
+	wire[DATA_WIDTH-1:0]	AD1_out,AD2_out;
+	wire[DATA_WIDTH-1:0]	DAT1_out,DAT2_out;
+	
+	wire						AD1_clk,AD2_clk;
+	assign					AD1_clk	= LDAD1 && ucode_exec_clk;
+	assign					AD2_clk	= LDAD2 && ucode_exec_clk;
+	wire						DAT1_clk,DAT2_clk;
+	assign					DAT1_clk	= LDDAT1 && ucode_exec_clk;
+	assign					DAT2_clk	= LDDAT2 && ucode_exec_clk;
+	uControl#(DATA_WIDTH)uControl_inst(	.clk(ucode_gen_clk),.P(ucode_C),.SWA(SWA),.SWB(SWB),.UA(ucode_UA),.IR(last_code),
+													.ucode(ucode_bus),.addr(d_uaddr),
+													.bus(data_bus),.AD1_sel(AD1_clk),.AD2_sel(AD2_clk),.AD1_reg(AD1_out),.AD2_reg(AD2_out),
+													.DAT1_sel(DAT1_clk),.DAT2_sel(DAT2_clk),.DAT1_reg(DAT1_out),.DAT2_reg(DAT2_out));
+	assign					d_ucode_S	= ucode_S,
+								d_ucode_M	= ucode_M,
+								d_ucode_WE	= ucode_WE,
+								d_ucode_A	= ucode_A,
+								d_ucode_B	= ucode_B,
+								d_ucode_C	= ucode_C,
+								d_ucode_UA	= ucode_UA;
+	
+	decode5_32				ucode_A_decoder(	.data(ucode_A),
+														.eq1(LDR0),.eq2(LDR1),.eq3(LDR2),
+														.eq4(LDDR1),.eq5(LDDR2),.eq6(LDALUCN),
+														.eq7(LDSHEFT),
+														.eq8(LDFLAG),
+														.eq9(LDRAM),.eq10(LDRAMD),
+														.eq11(LDPC),.eq12(INCPC),
+														.eq13(LDLED),
+														.eq14(LDIR),
+														.eq15(LDAD1),.eq16(LDAD2),
+														.eq17(LDDAT1),.eq18(LDDAT2),
+														);
+
+	lpm_mux5					data_bus_mux(	.sel(ucode_B),.result(data_bus),
 													.data0x(EFLAG),
 													.data1x(input_data),
 													.data2x(R0),.data3x(R1),.data4x(R2),
@@ -93,7 +115,9 @@ module Computer#(parameter integer DATA_WIDTH=16)(clk,timing_clr,input_data,pc_c
 													.data7x(SHEFT_out),.data8x(SHEFT_flag_out),
 													.data9x(flag),
 													.data10x(RAM_out),
-													.data11x(PC_out));
+													.data11x(PC_out),
+													.data12x(AD1_out),.data13x(AD2_out),
+													.data14x(DAT1_out),.data15x(DAT2_out));
 	assign					d_bus = data_bus;
 	
 	//执行元器件实例

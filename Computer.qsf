@@ -61,6 +61,10 @@ set_global_assignment -name EDA_NATIVELINK_SIMULATION_TEST_BENCH SHEF -section_i
 set_global_assignment -name EDA_TEST_BENCH_NAME SHEF -section_id eda_simulation
 set_global_assignment -name EDA_DESIGN_INSTANCE_NAME i1 -section_id SHEF
 set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME SHEFT -section_id SHEF
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_global_assignment -name EDA_RUN_TOOL_AUTOMATICALLY OFF -section_id eda_simulation
 set_global_assignment -name EDA_TEST_BENCH_FILE SHEFT.vt -section_id SHEF
 set_global_assignment -name SYSTEMVERILOG_FILE SHEFT.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ALU.sv
@@ -82,8 +86,7 @@ set_global_assignment -name SYSTEMVERILOG_FILE common_reg.sv
 set_global_assignment -name SYSTEMVERILOG_FILE uControl.sv
 set_global_assignment -name VECTOR_WAVEFORM_FILE Computer.vwf
 set_global_assignment -name VECTOR_WAVEFORM_FILE uControl.vwf
-set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
-set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
-set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-set_global_assignment -name EDA_RUN_TOOL_AUTOMATICALLY OFF -section_id eda_simulation
+set_global_assignment -name QIP_FILE decode5_32.qip
+set_global_assignment -name QIP_FILE lpm_mux5.qip
+set_global_assignment -name VECTOR_WAVEFORM_FILE Computer2.vwf
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
