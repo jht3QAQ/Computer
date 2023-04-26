@@ -98,17 +98,17 @@ module uControl#(parameter integer WIDTH=16)(clk,P,SWA,SWB,UA,IR,ucode,addr,bus,
 		parameter	P3				= 4'b0011;
 		parameter	P4				= 4'b0100;
 		
-		parameter	RDAR0			= 4'b0001;
-		parameter	RDAR1			= 4'b0010;
-		parameter	RDAR2			= 4'b0011;
-		parameter	DA				= 4'b0100;	//直接寻址
-		parameter	IA				= 4'b0101;	//间接寻址
+		parameter	RDAR0			= 4'b0001;	//R0直接寻址
+		parameter	RDAR1			= 4'b0010;	//R1直接寻址
+		parameter	RDAR2			= 4'b0011;	//R2直接寻址
+		parameter	DA				= 4'b0100;	//主存直接寻址
+		parameter	IA				= 4'b0101;	//主存间接寻址
 		parameter	AA				= 4'b0110;	//变址寻址 RI寄存器暂定为R2
-		parameter	RA				= 4'b0111;	//相对寻址
+		parameter	RA				= 4'b0111;	//PC相对寻址
 		parameter	IMMA			= 4'b1000;	//立即数寻址
-		parameter	DAR0			= 4'b1001;	//R0直接寻址
-		parameter	DAR1			= 4'b1010;	//R1直接寻址
-		parameter	DAR2			= 4'b1011;	//R2直接寻址
+		parameter	DAR0			= 4'b1001;	//R0间接寻址
+		parameter	DAR1			= 4'b1010;	//R1间接寻址
+		parameter	DAR2			= 4'b1011;	//R2间接寻址
 		
 		input[7:0]				addr;
 		input[3:0]				AD1,AD2;
@@ -319,7 +319,7 @@ module uControl#(parameter integer WIDTH=16)(clk,P,SWA,SWB,UA,IR,ucode,addr,bus,
 			8'h64:ucode_table = {4'b1001,	1'b0,	1'b0,	LDFLAG,	ALU_FLAG,	4'b0,		8'h5A};	//DR1+DR2-> FLAG
 			//STA	->	DAT2 = DAT1
 			8'h65:ucode_table = {4'b0,		1'b0,	1'b1,	LDDAT2,	DAT1_B,		4'b0,		8'h5A};	//DAT1	-> DAT2
-			//OUT	->	input	= DAT1
+			//OUT	->	output = DAT1
 			8'h66:ucode_table = {4'b0,		1'b0,	1'b1,	LDLED,	DAT1_B,		4'b0,		8'h5A};	//DAT1	-> LED
 			//JMP	->	PC = DAT1
 			8'h67:ucode_table = {4'b0,		1'b0,	1'b0,	LDPC,		DAT1_B,		4'b0,		8'h5A};	//DAT1	-> AR
